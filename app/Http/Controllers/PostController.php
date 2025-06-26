@@ -25,23 +25,27 @@ class PostController extends Controller
 {
     $request->validate([
         'content' => 'required|string|max:1000',
-        'image' => 'nullable|image|max:2048', // Accepts images only up to 2MB
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'video' => 'nullable|mimetypes:video/mp4,video/avi,video/mpeg,video/quicktime|max:20480',
     ]);
 
-    $imagePath = null;
+if (!$request->content && !$request->file('image') && !$request->file('video')) {
+    return redirect()->back()->withErrors(['content' => 'Please write something or upload a file.']);
+}
 
-    if ($request->hasFile('image')) {
-        $imagePath = $request->file('image')->store('uploads', 'public');
-    }
+    $imagePath = $request->file('image') ? $request->file('image')->store('images', 'public') : null;
+    $videoPath = $request->file('video') ? $request->file('video')->store('videos', 'public') : null;
 
     Post::create([
         'user_id' => auth()->id(),
         'content' => $request->content,
         'image_path' => $imagePath,
+        'video_path' => $videoPath,
     ]);
 
-    return back();
+    return redirect()->back();
 }
+
 
 
     /**
@@ -58,19 +62,34 @@ class PostController extends Controller
      * Update a post.
      */
     public function update(Request $request, Post $post)
-    {
-        $this->authorize('update', $post); // optional
+{
+    $this->authorize('update', $post); // optional
 
-        $request->validate([
-            'content' => 'required|string|max:1000',
-        ]);
+    $request->validate([
+        'content' => 'required|string|max:1000',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'video' => 'nullable|mimetypes:video/mp4,video/avi,video/mpeg,video/quicktime|max:20480',
+    ]);
 
-        $post->update([
-            'content' => $request->content,
-        ]);
-
-        return redirect()->route('home');
+    // Handle image upload if a new one is selected
+    if ($request->hasFile('image')) {
+        $imagePath = $request->file('image')->store('images', 'public');
+        $post->image_path = $imagePath;
     }
+
+    // Handle video upload if a new one is selected
+    if ($request->hasFile('video')) {
+        $videoPath = $request->file('video')->store('videos', 'public');
+        $post->video_path = $videoPath;
+    }
+
+    // Always update the content
+    $post->content = $request->content;
+    $post->save();
+
+    return redirect()->route('home');
+}
+
 
     /**
      * Delete a post.

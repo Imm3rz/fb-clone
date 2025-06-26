@@ -10,6 +10,7 @@ class Post extends Model
     'content',
     'user_id',
     'image_path',
+    'video_path', 
 ];
 
 public function user() {
