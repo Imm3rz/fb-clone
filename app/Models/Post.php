@@ -23,4 +23,11 @@ public function comments() {
 public function likes() {
     return $this->hasMany(Like::class);
 }
+public function sharedPost()
+{
+    return $this->belongsTo(Post::class, 'shared_post_id')->with('user');
+}
+
+
+
 }

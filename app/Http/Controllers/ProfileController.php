@@ -45,43 +45,51 @@ class ProfileController extends Controller
      * Upload and update the user's profile photo,
      * and create a "changed profile picture" post.
      */
-    public function uploadPhoto(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'profile_photo' => ['required', 'image', 'max:2048'],
-        ]);
+ public function uploadPhoto(Request $request): RedirectResponse
+{
+    $request->validate([
+        'profile_photo' => ['required', 'image', 'max:2048'],
+        'caption' => ['nullable', 'string', 'max:255'],
+    ]);
 
-        $user = $request->user();
+    $user = $request->user();
 
-        // Delete old profile photo if exists
-        if ($user->profile_photo_path) {
-            Storage::disk('public')->delete($user->profile_photo_path);
-        }
-
-        // Upload new profile photo
-        $path = $request->file('profile_photo')->store('profile-photos', 'public');
-
-        // Save path in user record
-        $user->profile_photo_path = $path;
-        $user->save();
-
-        // Avoid duplicate "changed profile picture" posts in same day
-        $alreadyPostedToday = Post::where('user_id', $user->id)
-            ->where('type', 'profile_update')
-            ->whereDate('created_at', now()->toDateString())
-            ->exists();
-
-        if (! $alreadyPostedToday) {
-            Post::create([
-                'user_id' => $user->id,
-                'content' => 'changed their profile picture.',
-                'image_path' => $path,
-                'type' => 'profile_update',
-            ]);
-        }
-
-        return redirect()->route('profile.edit')->with('status', 'profile-photo-updated');
+    // Delete old photo file
+    if ($user->profile_photo_path) {
+        Storage::disk('public')->delete($user->profile_photo_path);
     }
+
+    // Upload new file
+    $path = $request->file('profile_photo')->store('profile-photos', 'public');
+
+    // Save to user
+    $user->profile_photo_path = $path;
+    $user->save();
+
+    // Delete old profile update posts
+    Post::where('user_id', $user->id)
+        ->where('type', 'profile_update')
+        ->delete();
+
+    // Build caption post content
+    $caption = $request->input('caption');
+    $content = '';
+    if ($caption) {
+        $content .= ' ' . $caption;
+    }
+
+    // Save new post
+    Post::create([
+        'user_id' => $user->id,
+        'content' => $content,
+        'image_path' => $path,
+        'type' => 'profile_update',
+    ]);
+
+    return redirect()->route('profile.edit')->with('status', 'profile-photo-updated');
+}
+
+
 
     /**
      * Delete the user's account.

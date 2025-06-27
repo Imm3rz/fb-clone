@@ -102,4 +102,25 @@ if (!$request->content && !$request->file('image') && !$request->file('video')) 
 
         return redirect()->back();
     }
+public function share(Request $request, Post $post)
+{
+    $request->validate([
+        'caption' => 'nullable|string|max:1000',
+    ]);
+
+    $caption = $request->input('caption') ?? ' ';
+
+    Post::create([
+        'user_id' => auth()->id(),
+        'content' => $caption,
+        'image_path' => $post->image_path,
+        'video_path' => $post->video_path,
+        'type' => 'shared_post',
+        'shared_post_id' => $post->id,
+    ]);
+
+    return redirect()->back()->with('status', 'Post shared!');
+}
+
+
 }

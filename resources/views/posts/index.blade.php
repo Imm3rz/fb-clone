@@ -51,144 +51,210 @@
                 </form>
             </div>
         </div>
+<!-- Posts -->
+@forelse ($posts as $post)
+<div class="rounded-lg shadow p-4 mb-4" style="background-color: #252728 !important;">
 
-        <!-- Posts -->
-        @forelse ($posts as $post)
-        
-        <div class="rounded-lg shadow p-4" style="background-color: #252728 !important;">
-            <div class="flex justify-between items-center mb-2">
-                <div class="flex items-center space-x-3">
-                    <img
-    src="{{ $post->user->profile_photo_path 
-        ? asset('storage/' . $post->user->profile_photo_path) 
-        : 'https://ui-avatars.com/api/?name=' . urlencode($post->user->name) }}"
-    class="h-9 w-9 rounded-full object-cover"
-    alt="{{ $post->user->name }}">
+    <!-- Header: Post owner -->
+    <div class="flex justify-between items-center mb-2">
+        <div class="flex items-center space-x-3">
+            <img
+                src="{{ $post->user->profile_photo_path 
+                    ? asset('storage/' . $post->user->profile_photo_path) 
+                    : 'https://ui-avatars.com/api/?name=' . urlencode($post->user->name) }}"
+                class="h-9 w-9 rounded-full object-cover"
+                alt="{{ $post->user->name }}">
 
-                    <div>
-                        <p class="font-semibold text-sm text-white">{{ $post->user->name }}</p>
-                        <p class="text-xs text-gray-500">{{ $post->created_at->diffForHumans() }}</p>
-                    </div>
-                </div>
-                @if ($post->user->id === auth()->id())
-                <div class="flex space-x-2 text-sm">
-                    <a href="{{ route('posts.edit', $post) }}" class="text-gray-500 hover:text-blue-700" title="edit">
-    <i class="fa-solid fa-pen" title="edit"></i>
-</a>
-                    <form action="{{ route('posts.destroy', $post) }}" method="POST">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="text-gray-500 hover:text-red-700" title="delete">
-        <i class="fa-solid fa-trash" title="delete"></i>
-    </button>
-                    </form>
-                </div>
-                @endif
+            <div>
+                <p class="font-semibold text-sm text-white">
+                    {{ $post->user->name }}
+                    @if ($post->type === 'shared_post')
+                        <span class="text-gray-400 text-xs">shared a post</span>
+                    @endif
+                </p>
+                <p class="text-xs text-gray-500">{{ $post->created_at->diffForHumans() }}</p>
             </div>
+        </div>
 
-            <p class="text-white text-sm mb-2">
-    @if ($post->type === 'profile_update')
-        <span class="font-semibold ">{{ $post->user->name }}</span> changed their profile picture.
-    @else
-        <span class="font-semibold hidden">{{ $post->user->name }}</span> {{ $post->content }}
-    @endif
-</p>
-
-@if ($post->image_path)
-    <div class="mb-3">
-        <img src="{{ asset('storage/' . $post->image_path) }}"
-             class="rounded-lg max-w-full h-auto border"
-             alt="{{ $post->type === 'profile_update' ? 'Updated Profile Picture' : 'Post Image' }}">
+        <!-- Edit/Delete -->
+        @if ($post->user->id === auth()->id())
+        <div class="flex space-x-2 text-sm">
+            <a href="{{ route('posts.edit', $post) }}" class="text-gray-500 hover:text-blue-700" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+            </a>
+            <form action="{{ route('posts.destroy', $post) }}" method="POST">
+                @csrf @method('DELETE')
+                <button type="submit" class="text-gray-500 hover:text-red-700" title="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </form>
+        </div>
+        @endif
     </div>
-@endif
 
-          
-     
+    <!-- ✅ SHARED POST UI -->
+    @if ($post->type === 'shared_post' && $post->sharedPost)
+        @if ($post->content)
+            <p class="text-white text-sm mb-2">{{ $post->content }}</p>
+        @endif
 
-            <!-- Show Video -->
-            @if ($post->video_path)
-            <div class="mb-3">
-                <video controls class="rounded-lg w-full h-auto border">
-                    <source src="{{ asset('storage/' . $post->video_path) }}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
+        <!-- Shared Content Container -->
+        <div class="border rounded-md p-3 bg-gray-800">
+
+            <!-- Original Poster -->
+            <div class="flex items-center space-x-3 mb-2">
+                <img
+                    src="{{ $post->sharedPost->user->profile_photo_path 
+                        ? asset('storage/' . $post->sharedPost->user->profile_photo_path) 
+                        : 'https://ui-avatars.com/api/?name=' . urlencode($post->sharedPost->user->name) }}"
+                    class="h-8 w-8 rounded-full object-cover"
+                    alt="{{ $post->sharedPost->user->name }}">
+                <div>
+                    <p class="text-sm font-semibold text-white">{{ $post->sharedPost->user->name }}</p>
+                    <p class="text-xs text-gray-400">{{ $post->sharedPost->created_at->diffForHumans() }}</p>
+                </div>
             </div>
+
+            <p class="text-sm text-white mb-2">{{ $post->sharedPost->content }}</p>
+
+            @if ($post->sharedPost->image_path)
+                <img src="{{ asset('storage/' . $post->sharedPost->image_path) }}"
+                     class="rounded-md max-w-full h-auto border border-gray-700"
+                     alt="Shared Post Image">
+            @endif
+        </div>
+    @else
+        <!-- 📝 Regular Post or Profile Update -->
+        <p class="text-white text-sm mb-2">{{ $post->content }}</p>
+
+        @if ($post->image_path)
+            <div class="mb-3">
+                <img src="{{ asset('storage/' . $post->image_path) }}"
+                     class="rounded-lg max-w-full h-auto border border-gray-700"
+                     alt="{{ $post->type === 'profile_update' ? 'Updated Profile Picture' : 'Post Image' }}">
+            </div>
+        @endif
+    @endif
+
+    @if ($post->video_path)
+        <div class="mb-3">
+            <video controls class="rounded-lg w-full h-auto border">
+                <source src="{{ asset('storage/' . $post->video_path) }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    @endif
+
+    <!-- 📣 Facebook-Style Footer -->
+    <div class="mt-2 border-t border-gray-700 pt-2 px-2">
+        <div class="flex justify-between items-center text-sm text-gray-400 mb-2">
+            <div class="flex items-center space-x-1">
+                <i class="fa-solid fa-thumbs-up text-blue-500 text-xs"></i>
+                <!-- <i class="fa-solid fa-heart text-red-500 text-xs"></i> -->
+                <span>{{ $post->likes->count() }}</span>
+            </div>
+            <div>
+                <span>{{ $post->comments->count() }} comments</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons: Like | Comment | Share -->
+        <div class="flex justify-around text-white text-sm border-t border-gray-600 pt-2">
+            <!-- Like -->
+            @if ($post->likes->contains('user_id', auth()->id()))
+            <form action="{{ route('posts.unlike', $post) }}" method="POST">
+                @csrf
+                <button type="submit" class="flex items-center gap-1 hover:text-blue-500">
+                    <i class="fa-solid fa-thumbs-up"></i> Unlike
+                </button>
+            </form>
+            @else
+            <form action="{{ route('posts.like', $post) }}" method="POST">
+                @csrf
+                <button type="submit" class="flex items-center gap-1 hover:text-blue-500">
+                    <i class="fa-regular fa-thumbs-up"></i> Like
+                </button>
+            </form>
             @endif
 
-            <!-- Like/Unlike -->
-            <div class="mb-2 text-sm">
-                @if ($post->likes->contains('user_id', auth()->id()))
-                <form action="{{ route('posts.unlike', $post) }}" method="POST" class="inline">
-                    @csrf
-                    <button type="submit" class="text-blue-600 hover:underline">Unlike ({{ $post->likes->count() }})</button>
-                </form>
-                @else
-                <form action="{{ route('posts.like', $post) }}" method="POST" class="inline">
-                    @csrf
-                    <button type="submit" class="text-gray-600 hover:underline">Like ({{ $post->likes->count() }})</button>
-                </form>
-                @endif
-            </div>
+            <!-- Comment (Focus) -->
+            <button 
+                class="flex items-center gap-1 hover:text-blue-500"
+                onclick="document.getElementById('comment-input-{{ $post->id }}').focus();"
+            >
+                <i class="fa-regular fa-comment"></i> Comment
+            </button>
 
-            <!-- Comments -->
-<div class="space-y-4 text-sm mt-4">
-    @foreach ($post->comments as $comment)
+            <!-- Share -->
+            <form action="{{ route('posts.share', $post) }}" method="POST">
+                @csrf
+                <button type="submit" class="flex items-center gap-1 hover:text-blue-500">
+                    <i class="fa-solid fa-share"></i> Share
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 💬 Comments -->
+    <div class="space-y-4 text-sm mt-4">
+        @foreach ($post->comments as $comment)
         <div class="flex items-start space-x-3 p-3 rounded-lg text-white" style="background: #333334 !important;">
-            <!-- Profile Picture -->
             <div class="flex-shrink-0">
-               <img
-    src="{{ $comment->user->profile_photo_path 
-        ? asset('storage/' . $comment->user->profile_photo_path) 
-        : 'https://ui-avatars.com/api/?name=' . urlencode($comment->user->name) }}"
-    alt="{{ $comment->user->name }}"
-    class="w-10 h-10 rounded-full object-cover">
-
+                <img
+                    src="{{ $comment->user->profile_photo_path 
+                        ? asset('storage/' . $comment->user->profile_photo_path) 
+                        : 'https://ui-avatars.com/api/?name=' . urlencode($comment->user->name) }}"
+                    alt="{{ $comment->user->name }}"
+                    class="w-10 h-10 rounded-full object-cover">
             </div>
 
-            <!-- Comment Body -->
             <div class="flex-1">
                 <div class="flex justify-between items-center">
                     <div>
                         <p class="font-semibold text-white leading-tight">{{ $comment->user->name }}</p>
                         <p class="text-sm text-gray-200 mt-1">{{ $comment->comment }}</p>
                     </div>
-
-                    <!-- Actions -->
                     @if ($comment->user_id === auth()->id())
-                        <div class="flex items-center space-x-2 text-xs text-gray-400">
-                            <a href="{{ route('comments.edit', $comment->id) }}" class="hover:text-blue-400">
-                                <i class="fa-solid fa-pen"></i>
-                            </a>
-                            <form action="{{ route('comments.destroy', $comment->id) }}" method="POST">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="hover:text-red-400">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </form>
-                        </div>
+                    <div class="flex items-center space-x-2 text-xs text-gray-400">
+                        <a href="{{ route('comments.edit', $comment->id) }}" class="hover:text-blue-400">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                        <form action="{{ route('comments.destroy', $comment->id) }}" method="POST">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="hover:text-red-400">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
                     @endif
                 </div>
-
-                <!-- Timestamp -->
-                <p class="text-xs text-gray-400 mt-1">
-                    {{ $comment->created_at->diffForHumans() }}
-                </p>
+                <p class="text-xs text-gray-400 mt-1">{{ $comment->created_at->diffForHumans() }}</p>
             </div>
         </div>
-    @endforeach
+        @endforeach
+    </div>
+
+    <!-- Add Comment Input -->
+    <form action="{{ route('comments.store') }}" method="POST" class="mt-3 flex items-center space-x-2">
+        @csrf
+        <input type="hidden" name="post_id" value="{{ $post->id }}">
+        <input id="comment-input-{{ $post->id }}" type="text" name="comment" placeholder="Write a comment..."
+            style="background-color: #3B3D3E !important;"
+            class="w-full border text-white border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring focus:ring-blue-100"
+            required>
+        <button type="submit"
+            class="text-white p-2 rounded text-sm"
+            style="background-color: #333334 !important"
+            onmouseover="this.style.backgroundColor='#4a4a4a'"
+            onmouseout="this.style.backgroundColor='#333334'">
+            Comment
+        </button>
+    </form>
 </div>
+@empty
+<p class="text-white">No posts yet.</p>
+@endforelse
 
-
-            <!-- Add Comment -->
-            <form action="{{ route('comments.store') }}" method="POST" class="mt-3 flex items-center space-x-2">
-                @csrf
-                <input type="hidden" name="post_id" value="{{ $post->id }}">
-                <input type="text" name="comment" placeholder="Write a comment..." style="background-color: #3B3D3E !important;" class="w-full border text-white border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring focus:ring-blue-100" required>
-                <button type="submit" class="text-white p-2 rounded text-sm" style="background-color: #333334 !important" onmouseover="this.style.backgroundColor='#4a4a4a'" onmouseout="this.style.backgroundColor='#333334'">Comment</button>
-            </form>
-        </div>
-        @empty
-        <p class="text-center text-gray-500">No posts yet. Be the first to share something!</p>
-        @endforelse
 
     </div>
 

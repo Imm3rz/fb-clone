@@ -33,6 +33,8 @@ Route::get('/comments/{comment}/edit', [CommentController::class, 'edit'])->name
 Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
 Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 
+Route::post('/posts/{post}/share', [PostController::class, 'share'])->name('posts.share');
+
     Route::post('/posts/{post}/like', [LikeController::class, 'like'])->name('posts.like');
     Route::post('/posts/{post}/unlike', [LikeController::class, 'unlike'])->name('posts.unlike');
 });
