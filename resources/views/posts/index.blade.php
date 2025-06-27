@@ -1,12 +1,17 @@
 
 <x-app-layout>
 
-    <div class="py-8 max-w-xl mx-auto space-y-6">
+    <div class="py-8 max-w-2xl mx-auto space-y-6">
 
         <!-- Create Post Box -->
         <div class=" rounded-lg shadow p-4" style="background-color: #252728 !important;">
             <div class="flex items-start space-x-3">
-                <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}" class="h-10 w-10 rounded-full" alt="User Avatar">
+                <img 
+    src="{{ Auth::user()->profile_photo_path 
+        ? asset('storage/' . Auth::user()->profile_photo_path) 
+        : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) }}" 
+    class="h-10 w-10 rounded-full object-cover" 
+    alt="User Avatar">
                 
                 <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data" class="w-full space-y-2">
                     @csrf
@@ -49,10 +54,17 @@
 
         <!-- Posts -->
         @forelse ($posts as $post)
+        
         <div class="rounded-lg shadow p-4" style="background-color: #252728 !important;">
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center space-x-3">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode($post->user->name) }}" class="h-9 w-9 rounded-full" alt="User Avatar">
+                    <img
+    src="{{ $post->user->profile_photo_path 
+        ? asset('storage/' . $post->user->profile_photo_path) 
+        : 'https://ui-avatars.com/api/?name=' . urlencode($post->user->name) }}"
+    class="h-9 w-9 rounded-full object-cover"
+    alt="{{ $post->user->name }}">
+
                     <div>
                         <p class="font-semibold text-sm text-white">{{ $post->user->name }}</p>
                         <p class="text-xs text-gray-500">{{ $post->created_at->diffForHumans() }}</p>
@@ -73,14 +85,24 @@
                 @endif
             </div>
 
-            <p class="text-white text-sm mb-2">{{ $post->content }}</p>
+            <p class="text-white text-sm mb-2">
+    @if ($post->type === 'profile_update')
+        <span class="font-semibold ">{{ $post->user->name }}</span> changed their profile picture.
+    @else
+        <span class="font-semibold hidden">{{ $post->user->name }}</span> {{ $post->content }}
+    @endif
+</p>
 
-            <!-- Show Image -->
-            @if ($post->image_path)
-            <div class="mb-3">
-                <img src="{{ asset('storage/' . $post->image_path) }}" alt="Post Image" class="rounded-lg max-w-full h-auto border">
-            </div>
-            @endif
+@if ($post->image_path)
+    <div class="mb-3">
+        <img src="{{ asset('storage/' . $post->image_path) }}"
+             class="rounded-lg max-w-full h-auto border"
+             alt="{{ $post->type === 'profile_update' ? 'Updated Profile Picture' : 'Post Image' }}">
+    </div>
+@endif
+
+          
+     
 
             <!-- Show Video -->
             @if ($post->video_path)
@@ -108,38 +130,59 @@
             </div>
 
             <!-- Comments -->
-            <div class="space-y-2 text-sm">
-                @foreach ($post->comments as $comment)
-<div class="border-t pt-2 text-sm text-white">
-    <span class="font-medium text-white">{{ $comment->user->name }}:</span>
-    {{ $comment->comment }}
-    <div class="text-xs text-gray-500 flex justify-between">
-        <span >{{ $comment->created_at->diffForHumans() }}</span>
-
-        @if ($comment->user_id === auth()->id())
-        <div class="flex space-x-2">
-            <a href="{{ route('comments.edit', $comment->id) }}" class="text-gray-500 hover:underline text-xs">
-                <i class="fa-solid fa-pen"></i>
-            </a>
-            <form action="{{ route('comments.destroy', $comment->id) }}" method="POST">
-                @csrf @method('DELETE')
-                <button type="submit" class="text-gray-500 hover:underline text-xs">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </form>
-        </div>
-        @endif
-    </div>
-</div>
-@endforeach
+<div class="space-y-4 text-sm mt-4">
+    @foreach ($post->comments as $comment)
+        <div class="flex items-start space-x-3 p-3 rounded-lg text-white" style="background: #333334 !important;">
+            <!-- Profile Picture -->
+            <div class="flex-shrink-0">
+               <img
+    src="{{ $comment->user->profile_photo_path 
+        ? asset('storage/' . $comment->user->profile_photo_path) 
+        : 'https://ui-avatars.com/api/?name=' . urlencode($comment->user->name) }}"
+    alt="{{ $comment->user->name }}"
+    class="w-10 h-10 rounded-full object-cover">
 
             </div>
+
+            <!-- Comment Body -->
+            <div class="flex-1">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="font-semibold text-white leading-tight">{{ $comment->user->name }}</p>
+                        <p class="text-sm text-gray-200 mt-1">{{ $comment->comment }}</p>
+                    </div>
+
+                    <!-- Actions -->
+                    @if ($comment->user_id === auth()->id())
+                        <div class="flex items-center space-x-2 text-xs text-gray-400">
+                            <a href="{{ route('comments.edit', $comment->id) }}" class="hover:text-blue-400">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form action="{{ route('comments.destroy', $comment->id) }}" method="POST">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="hover:text-red-400">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Timestamp -->
+                <p class="text-xs text-gray-400 mt-1">
+                    {{ $comment->created_at->diffForHumans() }}
+                </p>
+            </div>
+        </div>
+    @endforeach
+</div>
+
 
             <!-- Add Comment -->
             <form action="{{ route('comments.store') }}" method="POST" class="mt-3 flex items-center space-x-2">
                 @csrf
                 <input type="hidden" name="post_id" value="{{ $post->id }}">
-                <input type="text" name="comment" placeholder="Write a comment..." style="background-color: #3B3D3E !important;" class="w-full border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring focus:ring-blue-100" required>
+                <input type="text" name="comment" placeholder="Write a comment..." style="background-color: #3B3D3E !important;" class="w-full border text-white border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring focus:ring-blue-100" required>
                 <button type="submit" class="text-white p-2 rounded text-sm" style="background-color: #333334 !important" onmouseover="this.style.backgroundColor='#4a4a4a'" onmouseout="this.style.backgroundColor='#333334'">Comment</button>
             </form>
         </div>
