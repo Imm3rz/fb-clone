@@ -6,6 +6,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfilePhotoController;
+use Illuminate\Support\Facades\Artisan;
 
 require __DIR__.'/auth.php';
 
@@ -16,7 +17,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::patch('/profile/photo', [ProfileController::class, 'uploadPhoto'])->name('profile.upload-photo')->middleware('auth');
     
-
+Route::get('/run-migrations', function () {
+    Artisan::call('migrate', ['--force' => true]);
+    return '✅ Migrations ran successfully!';
+});
     
 });
 

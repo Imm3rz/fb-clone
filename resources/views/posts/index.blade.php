@@ -1,3 +1,32 @@
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    // Attach confirmation to delete buttons
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.delete-confirm').forEach(function (button) {
+            button.addEventListener('click', function (e) {
+                e.preventDefault(); // stop form from submitting
+                const form = this.closest('form');
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "This action cannot be undone!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    });
+</script>
+@endpush
 
 <x-app-layout>
 
@@ -83,11 +112,12 @@
                 <i class="fa-solid fa-pen"></i>
             </a>
             <form action="{{ route('posts.destroy', $post) }}" method="POST">
-                @csrf @method('DELETE')
-                <button type="submit" class="text-gray-500 hover:text-red-700" title="Delete">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </form>
+    @csrf @method('DELETE')
+    <button type="submit" class="text-gray-500 hover:text-red-700 delete-confirm" title="Delete">
+        <i class="fa-solid fa-trash"></i>
+    </button>
+</form>
+
         </div>
         @endif
     </div>
@@ -220,11 +250,12 @@
                             <i class="fa-solid fa-pen"></i>
                         </a>
                         <form action="{{ route('comments.destroy', $comment->id) }}" method="POST">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="hover:text-red-400">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </form>
+    @csrf @method('DELETE')
+    <button type="submit" class="hover:text-red-400 delete-confirm">
+        <i class="fa-solid fa-trash"></i>
+    </button>
+</form>
+
                     </div>
                     @endif
                 </div>
